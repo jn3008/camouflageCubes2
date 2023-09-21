@@ -60,7 +60,17 @@ inline ofVec3f isom_to_grid(ofVec3f v)
 // }
 inline ofVec3f transform(ofVec3f v)
 {
-    return v.rotate(PI * 0.25, ofVec3f(0, 1, 0)).rotate(-special_constant, ofVec3f(1, 0, 0));
+    return v.rotateRad(PI * 0.25, ofVec3f(0, 1, 0)).rotateRad(-special_constant, ofVec3f(1, 0, 0));
+}
+
+inline ofVec3f global_transform(ofVec3f v)
+{
+    return transform(v*global_scale);
+}
+inline ofVec3f scrolling(ofVec3f v, float t)
+{
+    v.y += scroll_amt * t;
+    return v;
 }
 
 class Pair

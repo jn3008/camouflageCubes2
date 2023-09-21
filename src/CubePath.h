@@ -30,6 +30,4 @@ class CubePath
         ofVec3f action(ofVec3f v, int move_idx, float q);
         ofVec3f squish(ofVec3f v, int move_idx, float q);
         ofVec3f roll(ofVec3f v, int move_idx, float q);
-        ofVec3f global_transform(ofVec3f v);
-        ofVec3f scrolling(ofVec3f v);
 };

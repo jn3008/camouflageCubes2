@@ -8,24 +8,20 @@ constexpr float special_constant = 0.6154797086703873410674645891239936;
 constexpr float global_scale = 30;
 constexpr int dotSize = 5;
 constexpr int scroll_amt = 5;
-constexpr int bg_rad = 8;
+constexpr int bg_rad = 20;
 
-constexpr std::array<std::array<float, 3>, 8> cube_verts = // float cube_verts[8][3] =
+constexpr std::array<std::array<float, 3>, 8> cube_verts = 
     {{
         {-0.5, -0.5, -0.5},
         {-0.5, -0.5, 0.5},
         {-0.5, 0.5, -0.5},
         {-0.5, 0.5, 0.5},
-        {-0.5, -0.5, -0.5},
-        {-0.5, -0.5, 0.5},
-        {-0.5, 0.5, -0.5},
-        {-0.5, 0.5, 0.5}}};
-// = new PVector[8];
-// for (int i = 0; i < 2; i++)
-// 	for (int j = 0; j < 2; j++)
-// 		for (int k = 0; k < 2; k++)
-// 			cube_verts[k * 4 + j * 2 + i] = new PVector(i - 0.5,j - 0.5,k - 0.5);
-constexpr std::array<std::array<int, 4>, 6> cube_faces = // int cube_faces[6][4] = {
+        {0.5, -0.5, -0.5},
+        {0.5, -0.5, 0.5},
+        {0.5, 0.5, -0.5},
+        {0.5, 0.5, 0.5}}};
+        
+constexpr std::array<std::array<int, 4>, 6> cube_faces =
     {{
         {0, 1, 2, 3},
         {4, 5, 6, 7},

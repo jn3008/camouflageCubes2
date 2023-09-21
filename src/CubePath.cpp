@@ -64,10 +64,7 @@ void CubePath::submit()
 void CubePath::add_to_paths()
 {
     float eps = 1e-6;
-    // std::cout << g->cubePaths.size() << std::endl;
     g->cubePaths.push_back(new CubePath(*this));
-    // std::cout << g->cubePaths.size() << std::endl;
-    // std::cout << &g << std::endl;
 
     for (int i = 0; i < numMovements + 1; i++)
     {
@@ -81,7 +78,6 @@ void CubePath::add_to_paths()
                 if (!in_grid(x, y))
                     continue;
                 Pair co = get_grid_coords(positions[i]);
-                // println(positions[i], );
                 int xx = co.get(0) + x;
                 int yy = co.get(1) + y;
                 if (!g->in_grid(xx, yy))
@@ -209,30 +205,19 @@ bool CubePath::does_cubepath_overlap()
 
 void CubePath::show()
 {
-    // ofLog() << "cubepath.show(), cubepath address is: " << this << ", g->parent->t: " << g->parent->t;
     if (interval.contains(g->parent->t))
     {
-
-        // ofLog() << "timeOffset "<<timeOffset<<", duration "<<duration;
-        // ofLog() << "doing show(fmod(g->parent->t + 1 - timeOffset, 1) / duration * .999) ";
         show(fmod(g->parent->t + 1 - timeOffset, 1) / duration * .999);
-        // ofLog() << "DONE show(fmod(g->parent->t + 1 - timeOffset, 1) / duration * .999) ";
     }
 }
 
 void CubePath::show(float q = 0)
 { // q in [0,1]
 
-    // ofLog() << "this is void CubePath::show(float q)" ;
     float Q = q * numMovements;
-    // ofLog() << "q" << q;
-    // ofLog() << "numMovements" << numMovements;
-    // ofLog() << "Q: " << Q;
-    // ofLog() << "floor(Q): " << floor(Q);
 
     int type = get_info(movements[floor(Q)]).get(0);
 
-    // ofLog() << "type: " << type;
     if (type > 11 && type < 15)
         show(floor(Q), elastic(fmod(Q, 1)));
     else if (type > 20 && type < 24)
@@ -242,86 +227,35 @@ void CubePath::show(float q = 0)
 }
 void CubePath::show(int move_idx, float q)
 {
-    // ofLog() << "this is void CubePath::show(int move_idx, float q)" ;
-    // show one partof the path
-    // ofSetColor(0);
     ofSetColor(255, 0, 0);
-    ofFill();
+    ofNoFill();
 
     float cube_verts_transformed[8][3];
 
-    // ofLog() << "doing for (int i = 0; i < 8; i++)";
     for (int i = 0; i < 8; i++)
     {
-        // ofLog() << "i="<<i;
         ofVec3f v = show(ofVec3f(cube_verts[i][0], cube_verts[i][1], cube_verts[i][2]), move_idx, q);
         cube_verts_transformed[i][0] = v.x;
         cube_verts_transformed[i][1] = v.y;
         cube_verts_transformed[i][2] = v.z;
     }
-    // ofLog() << "for (int i = 0; i < 6; i++){for (int j = 0; j < 2; j++){}}";
     for (int i = 0; i < 6; i++)
     {
-        // for (int j = 0; j < 2; j++)
-        // {
-        //     if (i == 0 && j == 0)
-        //     {
-        //         ofLog() << cube_verts_transformed[cube_faces[i][0 + j]][0] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][0 + j]][1] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][0 + j]][2] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][1 + j]][0] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][1 + j]][1] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][1 + j]][2] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][2 + j]][0] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][2 + j]][1] << ", \n"
-        //                 << cube_verts_transformed[cube_faces[i][2 + j]][2];
-        //     }
-        //     ofDrawTriangle(
-        //         cube_verts_transformed[cube_faces[i][0 + j]][0],
-        //         cube_verts_transformed[cube_faces[i][0 + j]][1],
-        //         cube_verts_transformed[cube_faces[i][0 + j]][2],
-        //         cube_verts_transformed[cube_faces[i][1 + j]][0],
-        //         cube_verts_transformed[cube_faces[i][1 + j]][1],
-        //         cube_verts_transformed[cube_faces[i][1 + j]][2],
-        //         cube_verts_transformed[cube_faces[i][2 + j]][0],
-        //         cube_verts_transformed[cube_faces[i][2 + j]][1],
-        //         cube_verts_transformed[cube_faces[i][2 + j]][2]);
-        // }
-        ofDrawCircle(cube_verts_transformed[cube_faces[i][0]][0], cube_verts_transformed[cube_faces[i][0]][1], 5);
-        ofDrawCircle(cube_verts_transformed[cube_faces[i][1]][0], cube_verts_transformed[cube_faces[i][1]][1], 5);
-        ofDrawCircle(cube_verts_transformed[cube_faces[i][2]][0], cube_verts_transformed[cube_faces[i][2]][1], 5);
-        ofDrawCircle(cube_verts_transformed[cube_faces[i][3]][0], cube_verts_transformed[cube_faces[i][3]][1], 5);
-
-        ofDrawTriangle(
-            cube_verts_transformed[cube_faces[i][0]][0],
-            cube_verts_transformed[cube_faces[i][0]][1],
-            cube_verts_transformed[cube_faces[i][0]][2],
-            cube_verts_transformed[cube_faces[i][1]][0],
-            cube_verts_transformed[cube_faces[i][1]][1],
-            cube_verts_transformed[cube_faces[i][1]][2],
-            cube_verts_transformed[cube_faces[i][2]][0],
-            cube_verts_transformed[cube_faces[i][2]][1],
-            cube_verts_transformed[cube_faces[i][2]][2]);
-        ofDrawTriangle(
-            cube_verts_transformed[cube_faces[i][1]][0],
-            cube_verts_transformed[cube_faces[i][1]][1],
-            cube_verts_transformed[cube_faces[i][1]][2],
-            cube_verts_transformed[cube_faces[i][2]][0],
-            cube_verts_transformed[cube_faces[i][2]][1],
-            cube_verts_transformed[cube_faces[i][2]][2],
-            cube_verts_transformed[cube_faces[i][3]][0],
-            cube_verts_transformed[cube_faces[i][3]][1],
-            cube_verts_transformed[cube_faces[i][3]][2]);
-
-        // ofDrawTriangle(
-        //     30, -88.5884, 31.1818,
-        //     39, -87.4066, 91.1701,
-        //     30, -29.6, 30);
+        for (int j = 0; j < 2; j++)
+        {
+            ofDrawTriangle(
+                cube_verts_transformed[cube_faces[i][0 + j]][0],
+                cube_verts_transformed[cube_faces[i][0 + j]][1],
+                cube_verts_transformed[cube_faces[i][0 + j]][2],
+                cube_verts_transformed[cube_faces[i][1 + j]][0],
+                cube_verts_transformed[cube_faces[i][1 + j]][1],
+                cube_verts_transformed[cube_faces[i][1 + j]][2],
+                cube_verts_transformed[cube_faces[i][2 + j]][0],
+                cube_verts_transformed[cube_faces[i][2 + j]][1],
+                cube_verts_transformed[cube_faces[i][2 + j]][2]);
+        }
     }
 
-    // stroke(255, 0, 0);
-    // stroke(255);
-    // strokeWeight(dotSize);
     ofSetColor(255);
     ofNoFill();
 
@@ -348,41 +282,37 @@ ofVec3f CubePath::show(ofVec3f v, int move_idx, float q)
 {
     // prepare the vertex or point to be shown
 
-    // ofLog() << "doing ofVec3f CubePath::show(ofVec3f v, int move_idx, float q)";
     v = action(v, move_idx, q);
     v *= cubeSize;
 
-    // ofLog() << "doing interval.contains(0) && g->parent->t < 0.5";
+    // v*=global_scale;
+
+    // float mx = ofGetMouseX()*1.0/ofGetWidth();
+    // float my = ofGetMouseY()*1.0/ofGetHeight();
+
+    // std::cout << "v.x << v.y << v.z "<< std::endl;
+    // std::cout << v.x << v.y << v.z << std::endl;
+    // v.rotateRad(PI * 0.25 , ofVec3f(0, 0, 1));
+    // std::cout << v.x << v.y << v.z << std::endl;
+    // v.rotateRad(PI * 0.25 * mx , ofVec3f(0, 1, 0));
+    // v.rotateRad(-special_constant * my, ofVec3f(1, 0, 0));
+
     if (interval.contains(0) && g->parent->t < 0.5)
         v.y += scroll_amt;
 
-    // v.add(positions[move_idx]);
-
-    // ofLog() << "doing global_transform(v)";
     v = global_transform(v);
     ofVec3f pos = global_transform(ofVec3f(positions[move_idx]));
     pos.z = 0;
     v += pos;
-    v = scrolling(v);
+    v = scrolling(v, g->parent->t);
     return v;
 }
 ofVec3f CubePath::action(ofVec3f v, int move_idx, float q)
 {
-
-    // ofLog() << "doing ofVec3f CubePath::action(ofVec3f v, int move_idx, float q)";
-
-    // ofLog() << "&movements" << &movements;
-    // ofLog() << "move_idx" << move_idx;
-    // ofLog() << "movements[move_idx]" << movements[move_idx];
-
-    // ofLog() << "doing Pair info = get_info(movements[move_idx])";
-
     Pair info = get_info(movements[move_idx]);
-    // ofLog() << "info: " << info.get(0) << info.get(1);
     int move_type = info.get(0);
     if (move_type < 12) // rotate
         return roll(v, move_idx, q);
-    // else if (move_type < 15) // squish/unsquish
     else
         return squish(v, move_idx, q);
 }
@@ -423,26 +353,27 @@ ofVec3f CubePath::roll(ofVec3f v, int move_idx, float q)
 
     std::array<float, 3> pivot_arr = {cube_verts[pivots[axis]]};
     ofVec3f pivot = ofVec3f(pivot_arr[0], pivot_arr[1], pivot_arr[2]);
-    v -= pivot;
+    // v -= pivot;
     int xyz = axis / 4; // this is floor div
     if (xyz == 0)
-        v.rotate(-rotation_amount * HALF_PI * q, ofVec3f(1, 0, 0));
+        v.rotateRad(-rotation_amount * HALF_PI * q, pivot, ofVec3f(1, 0, 0));
     else if (xyz == 1)
-        v.rotate(-rotation_amount * HALF_PI * q, ofVec3f(0, 0, 1));
+        v.rotateRad(-rotation_amount * HALF_PI * q, pivot, ofVec3f(0, 0, 1));
     else
-        v.rotate(-rotation_amount * HALF_PI * q, ofVec3f(0, 1, 0));
-    v -= pivot;
+        v.rotateRad(-rotation_amount * HALF_PI * q, pivot, ofVec3f(0, 1, 0));
+
+    // v -= pivot;
     return v;
 }
 
-ofVec3f CubePath::global_transform(ofVec3f v)
-{
-    v *= global_scale;
-    return v;
-}
+// ofVec3f CubePath::global_transform(ofVec3f v)
+// {
+//     v *= global_scale;
+//     return v;
+// }
 
-ofVec3f CubePath::scrolling(ofVec3f v)
-{
-    v.y += scroll_amt * g->parent->t;
-    return v;
-}
+// ofVec3f CubePath::scrolling(ofVec3f v, )
+// {
+//     v.y += scroll_amt * g->parent->t;
+//     return v;
+// }
