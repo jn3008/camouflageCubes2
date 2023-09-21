@@ -38,7 +38,7 @@ public:
         ofLog() << "grid creation at: " << this << ", parent: " << parent_ << "rad: "<< rad <<std::endl;
         parent = parent_;
         rad = rad_;
-        occupations = std::vector<Occupation>(rad * rad);
+        // occupations = std::vector<Occupation>();
         for (int i = -rad; i < rad + 1; i++)
         {
             for (int j = -rad; j < rad + 1; j++)
@@ -114,15 +114,23 @@ public:
     }
 
     void show() {
-        ofLog() << "grid show start";
+        ofSetColor(255);
+        ofFill();
+        // ofLog() << "grid show start";
+        // ofLog() << npoints << "npoints";
         for (int i = 0; i < npoints; i++) {
+            // ofLog() << i;
             std::array<int, 2> co = idx_to_co(i);
+            // ofLog() <<"co"<< co;
             ofVec3f pos = grid_to_isom(ofVec3f(co[0], co[1], 0));
+            // ofLog() << "pos" << pos;
             pos *= global_scale;
             spheres[i].setPosition(pos.x, pos.y, pos.z);
+            // ofLog() << "i="<<i << ", did spheres[i].setPosition(pos.x, pos.y, pos.z);" << pos;
             // spheres[i].setPosition(co[0]*global_scale,co[1]*global_scale,0);
             spheres[i].draw();
+            // ofLog() << "i="<<i << ", did spheres[i].draw();" << pos;
         }
-        ofLog() << "grid show end";
+        // ofLog() << "grid show end";
     }
 };

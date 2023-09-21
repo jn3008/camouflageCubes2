@@ -8,7 +8,7 @@ constexpr float special_constant = 0.6154797086703873410674645891239936;
 constexpr float global_scale = 30;
 constexpr int dotSize = 5;
 constexpr int scroll_amt = 5;
-constexpr int bg_rad = 6;
+constexpr int bg_rad = 8;
 
 constexpr std::array<std::array<float, 3>, 8> cube_verts = // float cube_verts[8][3] =
     {{
