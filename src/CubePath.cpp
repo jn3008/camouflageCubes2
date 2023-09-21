@@ -66,10 +66,10 @@ void CubePath::submit()
 void CubePath::add_to_paths()
 {
     float eps = 1e-6;
-    std::cout << g->cubePaths.size() << std::endl;
-    g->cubePaths.push_back(this);
-    std::cout << g->cubePaths.size() << std::endl;
-    std::cout << &g << std::endl;
+    // std::cout << g->cubePaths.size() << std::endl;
+    g->cubePaths.push_back(new CubePath(*this));
+    // std::cout << g->cubePaths.size() << std::endl;
+    // std::cout << &g << std::endl;
     
     for (int i = 0; i < numMovements + 1; i++)
     {
@@ -245,7 +245,7 @@ void CubePath::show(float q=0)
 }
 void CubePath::show(int move_idx, float q)
 {   
-    // ofLog() << "this is void CubePath::show(int move_idx, float q)" ;
+    ofLog() << "this is void CubePath::show(int move_idx, float q)" ;
     // show one partof the path
     // ofSetColor(0);
     ofSetColor(255, 0, 0);
@@ -267,6 +267,18 @@ void CubePath::show(int move_idx, float q)
     {
         for (int j = 0; j < 2; j++)
         {
+            if (i==0 && j==0) {
+                ofLog() << 
+                cube_verts_transformed[cube_faces[i][0 + j]][0] << 
+                cube_verts_transformed[cube_faces[i][0 + j]][1] << 
+                cube_verts_transformed[cube_faces[i][0 + j]][2] << 
+                cube_verts_transformed[cube_faces[i][1 + j]][0] << 
+                cube_verts_transformed[cube_faces[i][1 + j]][1] << 
+                cube_verts_transformed[cube_faces[i][1 + j]][2] << 
+                cube_verts_transformed[cube_faces[i][2 + j]][0] << 
+                cube_verts_transformed[cube_faces[i][2 + j]][1] << 
+                cube_verts_transformed[cube_faces[i][2 + j]][2];
+            }
             ofDrawTriangle(
                 cube_verts_transformed[cube_faces[i][0 + j]][0],
                 cube_verts_transformed[cube_faces[i][0 + j]][1],

@@ -114,6 +114,7 @@ public:
     }
 
     void show() {
+        ofLog() << "grid show start";
         for (int i = 0; i < npoints; i++) {
             std::array<int, 2> co = idx_to_co(i);
             ofVec3f pos = grid_to_isom(ofVec3f(co[0], co[1], 0));
@@ -122,5 +123,6 @@ public:
             // spheres[i].setPosition(co[0]*global_scale,co[1]*global_scale,0);
             spheres[i].draw();
         }
+        ofLog() << "grid show end";
     }
 };

@@ -61,9 +61,9 @@ void ofApp::draw(){
 
     // ofDrawCircle(20*cos(t*PI*2), 20*sin(t*PI*2), 100);
 
-    // // gridptr->show();
-    // if (ofGetFrameNum()%200 == 0)
-    //     std::cout << "yo2" << std::endl;
+    grid.show();
+    if (ofGetFrameNum()%200 == 0)
+        std::cout << "yo2" << std::endl;
 
     // std::cout << "drawing grid\n";
     // ofLog() << "drawing";
