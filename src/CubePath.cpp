@@ -7,16 +7,10 @@
 #include "Functions.h"
 #include "ofApp.h"
 
-CubePath::CubePath(Grid *g_, int cubeSize_, std::vector<int> movements_, ofVec3f startPosition,
-                   float timeOffset_, float duration_)
+//--------------------------------------------------------------
+CubePath::CubePath(Grid *g_, int cubeSize_, std::vector<int> movements_,
+                   ofVec3f startPosition, float timeOffset_, float duration_)
 {
-
-    ofLog() << "CubePath constructor";
-    ofLog() << "cubeSize" << cubeSize;
-    ofLog() << "movements_.size()" << movements_.size();
-    ofLog() << "startPosition" << startPosition;
-    ofLog() << "timeOffset_" << timeOffset_;
-    ofLog() << "duration_" << duration_;
     g = g_;
     cubeSize = cubeSize_;
     movements = movements_;
@@ -37,11 +31,16 @@ CubePath::CubePath(Grid *g_, int cubeSize_, std::vector<int> movements_, ofVec3f
     }
 }
 
+//--------------------------------------------------------------
 bool CubePath::in_grid(int i, int j)
 {
-    return -j < 1 + i + cubeSize && (j - cubeSize - 1) < -i && std::min(i, j) > -cubeSize - 1 && std::max(i, j) < cubeSize + 1;
+    return -j < 1 + i + cubeSize &&
+           (j - cubeSize - 1) < -i &&
+           std::min(i, j) > -cubeSize - 1 &&
+           std::max(i, j) < cubeSize + 1;
 }
 
+//--------------------------------------------------------------
 Interval CubePath::get_time_interval(int move_idx)
 {
     float t0 = fmod(move_idx * duration / numMovements + timeOffset, 1);
@@ -49,18 +48,14 @@ Interval CubePath::get_time_interval(int move_idx)
     return Interval(t0, t1);
 }
 
+//--------------------------------------------------------------
 void CubePath::submit()
 {
-    ofLog() << "cubepath sumitted";
-    // see whether this cubepath interesects any other existing cubepath
-    // if not, add it to the list of cubepaths.
     if (!does_cubepath_overlap())
-    {
-        ofLog() << "cubepath added";
         add_to_paths();
-    }
 }
 
+//--------------------------------------------------------------
 void CubePath::add_to_paths()
 {
     float eps = 1e-6;
@@ -70,6 +65,13 @@ void CubePath::add_to_paths()
     {
         Interval interval0 = get_time_interval(i);
         Interval interval1 = get_time_interval(i - 1);
+
+        std::vector<Interval> intervals_to_add;
+        if (i < numMovements)
+            intervals_to_add.push_back(interval0);
+        if (i > 0)
+            intervals_to_add.push_back(interval1);
+
         int mm = cubeSize;
         for (int x = -mm; x < mm + 1; x++)
         { // go through each 2d iso view dot that a cube occupies
@@ -80,36 +82,20 @@ void CubePath::add_to_paths()
                 Pair co = get_grid_coords(positions[i]);
                 int xx = co.get(0) + x;
                 int yy = co.get(1) + y;
-                if (!g->in_grid(xx, yy))
-                    continue;
-                if (i < numMovements)
+
+                for (Interval add_interval : intervals_to_add)
                 {
-                    if (interval0.contains(0))
+                    if (add_interval.contains(0))
                     { // interval crosses the loop point
+                        if (g->in_grid(xx, yy))
+                            g->add_interval(xx, yy, add_interval.set1(1 + eps));
                         if (g->in_grid(xx, yy + scroll_amt))
-                        {
-                            g->add_interval(xx, yy, interval0.set1(1 - eps));
-                            g->add_interval(xx, yy + scroll_amt, interval0.set0(0 - eps));
-                        }
+                            g->add_interval(xx, yy + scroll_amt, add_interval.set0(0 - eps));
                     }
                     else
                     {
-                        g->add_interval(xx, yy, interval0);
-                    }
-                }
-                if (i > 0)
-                {
-                    if (interval1.contains(0))
-                    { // interval crosses the loop point
-                        if (g->in_grid(xx, yy + scroll_amt))
-                        {
-                            g->add_interval(xx, yy, interval1.set1(1 + eps));
-                            g->add_interval(xx, yy + scroll_amt, interval1.set0(0 - eps));
-                        }
-                    }
-                    else
-                    {
-                        g->add_interval(xx, yy, interval1);
+                        if (g->in_grid(xx, yy))
+                            g->add_interval(xx, yy, add_interval);
                     }
                 }
             }
@@ -117,6 +103,7 @@ void CubePath::add_to_paths()
     }
 }
 
+//--------------------------------------------------------------
 bool CubePath::does_cubepath_overlap()
 {
     float eps = 1e-6;
@@ -124,6 +111,13 @@ bool CubePath::does_cubepath_overlap()
     {
         Interval interval0 = get_time_interval(i);
         Interval interval1 = get_time_interval(i - 1);
+
+        std::vector<Interval> intervals_to_test;
+        if (i < numMovements)
+            intervals_to_test.push_back(interval0);
+        if (i > 0)
+            intervals_to_test.push_back(interval1);
+
         int mm = cubeSize;
         for (int x = -mm; x < mm + 1; x++)
         { // go through each 2d iso view dot that a cube occupies
@@ -135,65 +129,22 @@ bool CubePath::does_cubepath_overlap()
                 int xx = co.get(0) + x;
                 int yy = co.get(1) + y;
 
-                if (!g->in_grid(xx, yy))
-                    continue;
-
-                for (Interval interval : g->get_occupation(xx, yy).intervals)
+                for (Interval test_interval : intervals_to_test)
                 {
-                    if (i < numMovements)
-                    {
-                        if (interval0.contains(0))
-                        { // interval crosses the loop point
-                            if (g->in_grid(xx, yy + scroll_amt))
-                            {
-                                if (interval.clashes(interval0.set1(1 + eps)))
-                                    return true;
-                            }
-                        }
-                        else
-                        {
-                            if (interval.clashes(interval0))
+                    if (test_interval.contains(0))
+                    { // interval crosses the loop point
+                        if (g->in_grid(xx, yy))
+                            if (g->get_occupation(xx, yy).clashes(test_interval.set1(1 + eps)))
                                 return true;
-                        }
+                        if (g->in_grid(xx, yy + scroll_amt))
+                            if (g->get_occupation(xx, yy + scroll_amt).clashes(test_interval.set0(0 - eps)))
+                                return true;
                     }
-                    if (i > 0)
+                    else
                     {
-                        if (interval1.contains(0))
-                        { // interval crosses the loop point
-                            if (g->in_grid(xx, yy + scroll_amt))
-                            {
-                                if (interval.clashes(interval1.set1(1 + eps)))
-                                    return true;
-                            }
-                        }
-                        else
-                        {
-                            if (interval.clashes(interval1))
+                        if (g->in_grid(xx, yy))
+                            if (g->get_occupation(xx, yy).clashes(test_interval))
                                 return true;
-                        }
-                    }
-                }
-
-                if (!g->in_grid(xx, yy + scroll_amt))
-                    continue;
-
-                for (Interval interval : g->get_occupation(xx, yy + scroll_amt).intervals)
-                {
-                    if (i < numMovements)
-                    {
-                        if (interval0.contains(0))
-                        { // interval crosses the loop point
-                            if (interval.clashes(interval0.set0(0 - eps)))
-                                return true;
-                        }
-                    }
-                    if (i > 0)
-                    {
-                        if (interval1.contains(0))
-                        { // interval crosses the loop point
-                            if (interval.clashes(interval1.set0(0 - eps)))
-                                return true;
-                        }
                     }
                 }
             }
@@ -203,6 +154,7 @@ bool CubePath::does_cubepath_overlap()
     return false;
 }
 
+//--------------------------------------------------------------
 void CubePath::show()
 {
     if (interval.contains(g->parent->t))
@@ -211,6 +163,7 @@ void CubePath::show()
     }
 }
 
+//--------------------------------------------------------------
 void CubePath::show(float q = 0)
 { // q in [0,1]
 
@@ -225,10 +178,11 @@ void CubePath::show(float q = 0)
     else
         show(floor(Q), bounce(fmod(Q, 1)));
 }
+
+//--------------------------------------------------------------
 void CubePath::show(int move_idx, float q)
 {
-    ofSetColor(255, 0, 0);
-    ofNoFill();
+    ofFill();
 
     float cube_verts_transformed[8][3];
 
@@ -239,10 +193,11 @@ void CubePath::show(int move_idx, float q)
         cube_verts_transformed[i][1] = v.y;
         cube_verts_transformed[i][2] = v.z;
     }
+
+    // draw cube faces
+    ofSetColor(0);
     for (int i = 0; i < 6; i++)
-    {
         for (int j = 0; j < 2; j++)
-        {
             ofDrawTriangle(
                 cube_verts_transformed[cube_faces[i][0 + j]][0],
                 cube_verts_transformed[cube_faces[i][0 + j]][1],
@@ -253,60 +208,52 @@ void CubePath::show(int move_idx, float q)
                 cube_verts_transformed[cube_faces[i][2 + j]][0],
                 cube_verts_transformed[cube_faces[i][2 + j]][1],
                 cube_verts_transformed[cube_faces[i][2 + j]][2]);
-        }
-    }
 
-    ofSetColor(255);
-    ofNoFill();
 
     // draw vertices
-    // for (int i = 0; i < cubeSize + 1; i++)
-    // {
-    //     for (int j = 0; j < cubeSize + 1; j++)
-    //     {
-    //         for (int k = 0; k < cubeSize + 1; k++)
-    //         {
-    //             if (min(i, j, k) > 0 && max(i, j, k) < cubeSize)
-    //                 continue;
-    //             PVector v = show(new PVector(
-    //                                  i * 1.0 / cubeSize - 0.5,
-    //                                  j * 1.0 / cubeSize - 0.5,
-    //                                  k * 1.0 / cubeSize - 0.5),
-    //                              move_idx, q);
-    //             point(v.add(0, 0, dotSize * 1.5));
-    //         }
-    //     }
-    // }
+    ofSetColor(255);
+    for (int i = 0; i < cubeSize + 1; i++)
+    {
+        for (int j = 0; j < cubeSize + 1; j++)
+        {
+            for (int k = 0; k < cubeSize + 1; k++)
+            {
+                if (min(i, min(j, k)) > 0 && max(i, max(j, k)) < cubeSize)
+                    continue;
+                ofVec3f v = show(ofVec3f(
+                                     i * 1.0 / cubeSize - 0.5,
+                                     j * 1.0 / cubeSize - 0.5,
+                                     k * 1.0 / cubeSize - 0.5),
+                                 move_idx, q);
+                v.z += dotSize * 1.5;
+
+                g->sphere.setPosition(v);
+                g->sphere.draw();
+            }
+        }
+    }
 }
+
+//--------------------------------------------------------------
 ofVec3f CubePath::show(ofVec3f v, int move_idx, float q)
 {
     // prepare the vertex or point to be shown
-
     v = action(v, move_idx, q);
     v *= cubeSize;
-
-    // v*=global_scale;
-
-    // float mx = ofGetMouseX()*1.0/ofGetWidth();
-    // float my = ofGetMouseY()*1.0/ofGetHeight();
-
-    // std::cout << "v.x << v.y << v.z "<< std::endl;
-    // std::cout << v.x << v.y << v.z << std::endl;
-    // v.rotateRad(PI * 0.25 , ofVec3f(0, 0, 1));
-    // std::cout << v.x << v.y << v.z << std::endl;
-    // v.rotateRad(PI * 0.25 * mx , ofVec3f(0, 1, 0));
-    // v.rotateRad(-special_constant * my, ofVec3f(1, 0, 0));
 
     if (interval.contains(0) && g->parent->t < 0.5)
         v.y += scroll_amt;
 
     v = global_transform(v);
+    // v.z *= 0.3; // flatten // ofGetMouseX()*1.0/ofGetWidth();
     ofVec3f pos = global_transform(ofVec3f(positions[move_idx]));
     pos.z = 0;
     v += pos;
     v = scrolling(v, g->parent->t);
     return v;
 }
+
+//--------------------------------------------------------------
 ofVec3f CubePath::action(ofVec3f v, int move_idx, float q)
 {
     Pair info = get_info(movements[move_idx]);
@@ -317,6 +264,7 @@ ofVec3f CubePath::action(ofVec3f v, int move_idx, float q)
         return squish(v, move_idx, q);
 }
 
+//--------------------------------------------------------------
 ofVec3f CubePath::squish(ofVec3f v, int move_idx, float q)
 {
     Pair info = get_info(movements[move_idx]);
@@ -345,6 +293,7 @@ ofVec3f CubePath::squish(ofVec3f v, int move_idx, float q)
     return v;
 }
 
+//--------------------------------------------------------------
 ofVec3f CubePath::roll(ofVec3f v, int move_idx, float q)
 {
     Pair info = get_info(movements[move_idx]);
@@ -365,15 +314,3 @@ ofVec3f CubePath::roll(ofVec3f v, int move_idx, float q)
     // v -= pivot;
     return v;
 }
-
-// ofVec3f CubePath::global_transform(ofVec3f v)
-// {
-//     v *= global_scale;
-//     return v;
-// }
-
-// ofVec3f CubePath::scrolling(ofVec3f v, )
-// {
-//     v.y += scroll_amt * g->parent->t;
-//     return v;
-// }
