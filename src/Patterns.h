@@ -9,6 +9,8 @@ class Grid;
 #include "CubePath.h"
 
 //--------------------------------------------------------------
+// check whether a dot with grid coords (i,j) is in the
+// hexagon of radius rad
 bool in_grid_rad(int i, int j, int rad)
 {
     return -j < 1 + i + rad &&
@@ -18,6 +20,9 @@ bool in_grid_rad(int i, int j, int rad)
 }
 
 //--------------------------------------------------------------
+// check whether a 3d is in the hexagon of radius rad
+// after rotating to isometric projection and morphing
+// to square grid
 bool in_grid_from_pos(ofVec3f v, int rad)
 {
     Pair co = get_grid_coords(ofVec3f(v));
@@ -25,12 +30,15 @@ bool in_grid_from_pos(ofVec3f v, int rad)
 }
 
 //--------------------------------------------------------------
+// returns random integer x with abs(x) <= mag
 int randintmag(int mag)
 {
     return round(ofRandom(-1, 1) * mag);
 }
 
 //--------------------------------------------------------------
+// finds random point in hexagon of radius rad and
+// transforms to 3d point in non-isometric projection
 ofVec3f random_pos(int rad)
 {
     int x = randintmag(rad);
@@ -40,10 +48,12 @@ ofVec3f random_pos(int rad)
         x = randintmag(rad);
         y = randintmag(rad);
     }
-    return untransform(grid_to_isom(ofVec3f(x, y, 0)));
+    return inv_isometric(grid_to_isom(ofVec3f(x, y, 0)));
 }
 
 //--------------------------------------------------------------
+// fill grid with unsquish movements
+// with a given time offset and axis
 inline void submit_unsquish_wall(Grid *gridptr, float offset, int mvm_type)
 {
     int ss = bg_rad;
@@ -63,30 +73,31 @@ inline void submit_unsquish_wall(Grid *gridptr, float offset, int mvm_type)
             continue;
 
         float time_offset = fmod(startPosition.length() * 0.01 + offset, 1);
-        float duration = 0.15 + ofRandom(-1, 1) * 0.03; // + (easing_type ==  1 ? 0.06 : 0);
-        CubePath(gridptr, size, std::vector<int>{mvm(mvm_type, info)}, startPosition, time_offset, duration).submit();
+        float duration = 0.15 + ofRandom(-1, 1) * 0.03;
+        CubePath(gridptr, size, std::vector<int>{get_mvm_id(mvm_type, info)}, startPosition, time_offset, duration).submit();
     }
 }
 
 //--------------------------------------------------------------
-inline void sumbit_rolls(Grid *gridptr, float offset, int mvm_type, int info)
+// fill grid with roll movements with a given time offset 
+// and information about type of roll
+inline void sumbit_rolls(Grid *gridptr, float offset, int roll_type, int rotation_amt)
 {
     float tries = 1e5;
     for (int i = 0; i < tries; i++)
     {
         ofVec3f start_pos = random_pos(bg_rad);
-        // start_pos.z = 0;
 
-        // float time_offset = offset + random( -0.2, 1) * 0.15;
         float time_offset = offset + ofRandom(0, 1) * 0.15;
         float duration = 0.15 + ofRandom(-1, 1) * 0.05;
         int size = round(ofRandom(2, 4));
 
-        CubePath(gridptr, size, std::vector<int>{mvm(mvm_type, info)}, start_pos, time_offset, duration).submit();
+        CubePath(gridptr, size, std::vector<int>{get_mvm_id(roll_type, rotation_amt)}, start_pos, time_offset, duration).submit();
     }
 }
 
 //--------------------------------------------------------------
+// fill grid with random cube paths
 inline void submit_randoms(Grid *gridptr)
 {
     float tries = 3e6;
@@ -105,6 +116,6 @@ inline void submit_randoms(Grid *gridptr)
         float time_offset = ofRandom(0, 1);
         float duration = ofMap(size, 1, 4, 0.08, 0.2) + ofRandom(-1, 1) * 0.04;
         ofVec3f startPosition = random_pos(bg_rad);
-        CubePath(gridptr, size, std::vector<int>{mvm(mvm_type, info)}, startPosition, time_offset, duration).submit();
+        CubePath(gridptr, size, std::vector<int>{get_mvm_id(mvm_type, info)}, startPosition, time_offset, duration).submit();
     }
 }

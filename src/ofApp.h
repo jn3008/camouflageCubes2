@@ -26,19 +26,5 @@ public:
 	void gotMessage(ofMessage msg);
 
 	float t;
-	// Grid* gridptr;
 	Grid grid;
-	// Grid* g_point;
-
-	// const static std::array<ofVec3f,8> cube_verts
-	// {
-	// 	ofVec3f(-0.5, -0.5, -0.5),
-	// 	ofVec3f(-0.5, -0.5, 0.5),
-	// 	ofVec3f(-0.5, 0.5, -0.5),
-	// 	ofVec3f(-0.5, 0.5, 0.5),
-	// 	ofVec3f(-0.5, -0.5, -0.5),
-	// 	ofVec3f(-0.5, -0.5, 0.5),
-	// 	ofVec3f(-0.5, 0.5, -0.5),
-	// 	ofVec3f(-0.5, 0.5, 0.5)
-	// };
 };

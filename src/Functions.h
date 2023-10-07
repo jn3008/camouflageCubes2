@@ -1,8 +1,10 @@
 #include <cmath>
 #include "ofMain.h"
-// #include "ofApp.h"
 #include "Constants.h"
 
+// Some useful global functions
+
+//--------------------------------------------------------------
 inline float ease(float p, float g)
 {
     if (p < 0.5)
@@ -10,25 +12,36 @@ inline float ease(float p, float g)
     else
         return 1 - 0.5 * pow(2 * (1 - p), g);
 }
+
+//--------------------------------------------------------------
+// constrain between 0 and 1
 inline float c01(float x)
 {
     return std::min(1.0f, std::max(0.0f, x));
 }
+
+//--------------------------------------------------------------
 inline float sq(float x)
 {
     return x * x;
 }
+
+//--------------------------------------------------------------
 inline float pow_(float p, float g)
 {
     return 1 - pow(1 - p, g);
 }
 
-inline float elastic(float x)
+//--------------------------------------------------------------
+// custom elastic easing function
+inline float elastic(float x) 
 {
     return x == 0 ? 0 : x == 1 ? 1
                                : 1 + pow(2, -10 * x * 0.62) * cos(PI + x * (25 * 0.6)) * (1 - pow_(x, 1));
 }
 
+//--------------------------------------------------------------
+// custom bounce easing function
 inline float bounce(float x)
 {
     int n = 3;
@@ -41,6 +54,9 @@ inline float bounce(float x)
     return 1 - (1 - c01(sq(ofMap(x, intervals[n - 1], 1, -1, 1)))) * heights[n - 1];
 }
 
+//--------------------------------------------------------------
+// map from isometric projection to 2D grid
+// (bijection between hexagonal grid and square grid)
 inline ofVec3f isom_to_grid(ofVec3f v)
 {
     float C1 = cos(-PI * 0.25);
@@ -48,41 +64,38 @@ inline ofVec3f isom_to_grid(ofVec3f v)
     float C2 = cos(-special_constant);
     return ofVec3f(v.x / C1, (-S12 * v.x / C1 / C2 + v.y / C2));
 }
-// ofVec3f grid_to_isom(ofVec3f v)
-// {
-//     float C1 = cos(-PI * 0.25);
-//     float S12 = sin(-PI * 0.25) * sin(-ofApp::special_constant);
-//     float C2 = cos(-ofApp::special_constant);
-//     return ofVec3f(C1 * v.x, +S12 * v.x + C2 * v.y);
-// }
-inline ofVec3f transform(ofVec3f v)
+
+//--------------------------------------------------------------
+// rotate view to isometric projection
+inline ofVec3f isometric(ofVec3f v)
 {
     return v.rotateRad(PI * 0.25, ofVec3f(0, 1, 0)).rotateRad(-special_constant, ofVec3f(1, 0, 0));
 }
-inline ofVec3f untransform(ofVec3f v)
+
+//--------------------------------------------------------------
+// inverse of isometric function above
+inline ofVec3f inv_isometric(ofVec3f v)
 {
     return v.rotateRad(special_constant, ofVec3f(1, 0, 0)).rotateRad(-PI * 0.25, ofVec3f(0, 1, 0));
 }
-// inline ofVec3f transform(ofVec3f v, float test)
-// {
-//     return v.rotateRad(PI * 0.25*test, ofVec3f(0, 1, 0)).rotateRad(-special_constant*test, ofVec3f(1, 0, 0));
-// }
-// inline ofVec3f untransform(ofVec3f v, float test)
-// {
-//     return v.rotateRad(special_constant*test, ofVec3f(1, 0, 0)).rotateRad(-PI * 0.25*test, ofVec3f(0, 1, 0));
-// }
 
+//--------------------------------------------------------------
+// scale everything up to be visible and 'isometric'
 inline ofVec3f global_transform(ofVec3f v)
 {
-    return transform(v * global_scale);
+    return isometric(v * global_scale);
 }
+
+//--------------------------------------------------------------
+// make everything scroll (shift vertically continuously)
 inline ofVec3f scrolling(ofVec3f v, float t)
 {
-    // v.y += scroll_amt * t;
-    v += global_transform(ofVec3f(0, scroll_amt * t));
+    v.y += global_transform(ofVec3f(0, scroll_amt * t)).y;
     return v;
 }
 
+//--------------------------------------------------------------
+// simple class to store a pair of integers
 class Pair
 {
 public:
@@ -103,29 +116,48 @@ public:
     }
 };
 
+//--------------------------------------------------------------
+// take a regular 3D point, use 'isometric',
+// then 'isom_to_grid', and 'round'
+// this converts a 3d point to the coordinates of
+// the closest point in the isometric projection
+// theoretically for an input in Z^3 (integer), 
+// the output should be in Z^2 
 inline Pair get_grid_coords(ofVec3f v)
 {
-    ofVec3f v_ = isom_to_grid(transform(v));
+    ofVec3f v_ = isom_to_grid(isometric(v));
     return Pair(round(v_.x), round(v_.y));
 }
 
-inline int mvm(int axis, int rotation_amount)
+//--------------------------------------------------------------
+// encode information about a type of movement
+// of a cube from a pair of integers to a single
+// integer. since 'axis' is bounded from above
+// we can store it in the first few bits,
+// the 'amount' is supposedly is unbounded in Z,
+// we generally don't go beyond [-2, 2] but we could
+// for example 'type' could be the integer that
+// signifies a rotation about an edge of the cube in
+// the x-axis, while amount tells us how many
+// rotations of HALF_PI.
+inline int get_mvm_id(int mvm_type, int amount)
 {
-    int ret = abs(rotation_amount) << 5;
-    ret += axis;
-    ret *= rotation_amount < 0 ? -1 : 1;
+    int ret = abs(amount) << 5;
+    ret += mvm_type;
+    ret *= amount < 0 ? -1 : 1;
 
     return ret;
 }
 
-inline Pair get_info(int movement)
+//--------------------------------------------------------------
+// decode movmement information, inverse of 
+// get_mvm_id function above
+inline Pair get_mvm_info(int movement)
 {
-
-    // ofLog() << "inline Pair get_info(int movement), movement: " << movement;
-    int mask_axis = 0b11111;
-    int axis = abs(movement) & mask_axis;
+    int mask_type = 0b11111;
+    int mvm_type = abs(movement) & mask_type;
     int sign = movement < 0 ? -1 : 1;
-    int rotation_amount = sign * (abs(movement) >> 5);
+    int amount = sign * (abs(movement) >> 5);
 
-    return Pair(axis, rotation_amount);
+    return Pair(mvm_type, amount);
 }

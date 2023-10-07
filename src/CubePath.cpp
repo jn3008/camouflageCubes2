@@ -11,19 +11,19 @@
 CubePath::CubePath(Grid *g_, int cubeSize_, std::vector<int> movements_,
                    ofVec3f startPosition, float timeOffset_, float duration_)
 {
-    g = g_;
-    cubeSize = cubeSize_;
-    movements = movements_;
-    numMovements = movements.size();
-    timeOffset = timeOffset_;
-    duration = duration_;
-    // easingType = easingType_;
+    g = g_; // pointer to the parent grid
+    cubeSize = cubeSize_; // side length of cube
+    movements = movements_; // movements of the path, usually just one element
+    numMovements = movements.size(); 
+    timeOffset = timeOffset_; // when to begin, in [0, 1)
+    duration = duration_; // duration from beginning to end of path
     interval = Interval(timeOffset, fmod(timeOffset + duration, 1));
-    positions = std::vector<ofVec3f>(numMovements + 1);
+
+    positions = std::vector<ofVec3f>(numMovements + 1); // 3d positions of the cube for each movement
     positions[0] = startPosition;
     for (int i = 1; i < numMovements + 1; i++)
     {
-        int move_type = get_info(movements[i - 1]).first;
+        int move_type = get_mvm_info(movements[i - 1]).first;
         if (move_type > 11 && move_type < 15) // squishing
             positions[i] = positions[i - 1];
         else
@@ -32,6 +32,8 @@ CubePath::CubePath(Grid *g_, int cubeSize_, std::vector<int> movements_,
 }
 
 //--------------------------------------------------------------
+// check whether the given grid coordinate is in 
+// the hexagon of radius cubeSize
 bool CubePath::in_grid(int i, int j)
 {
     return -j < 1 + i + cubeSize &&
@@ -41,6 +43,7 @@ bool CubePath::in_grid(int i, int j)
 }
 
 //--------------------------------------------------------------
+// get the time interval of a single movement in the path
 Interval CubePath::get_time_interval(int move_idx)
 {
     float t0 = fmod(move_idx * duration / numMovements + timeOffset, 1);
@@ -49,6 +52,8 @@ Interval CubePath::get_time_interval(int move_idx)
 }
 
 //--------------------------------------------------------------
+// if this cube path doesn't clash with other paths in the
+// parent grid then add it to the paths.
 void CubePath::submit()
 {
     if (!does_cubepath_overlap())
@@ -56,6 +61,9 @@ void CubePath::submit()
 }
 
 //--------------------------------------------------------------
+// add this cube path to the parent grid's list of paths.
+// need to also record when each background dot is occupied
+// by path, to compare with the future submitted paths
 void CubePath::add_to_paths()
 {
     float eps = 1e-6;
@@ -63,22 +71,29 @@ void CubePath::add_to_paths()
 
     for (int i = 0; i < numMovements + 1; i++)
     {
-        Interval interval0 = get_time_interval(i);
-        Interval interval1 = get_time_interval(i - 1);
+        Interval interval_leave = get_time_interval(i); // time interval for arriving at this position
+        Interval interval_arrive = get_time_interval(i - 1);  // time interval for leaving this position
 
+        // for each position in the path, need to record
+        // its occupation for when the cube arrives and 
+        // when it leaves that position. except for the first
+        // position (record only leaving time interval) and the 
+        // last positions (record only arriving time interval)
         std::vector<Interval> intervals_to_add;
         if (i < numMovements)
-            intervals_to_add.push_back(interval0);
+            intervals_to_add.push_back(interval_leave);
         if (i > 0)
-            intervals_to_add.push_back(interval1);
+            intervals_to_add.push_back(interval_arrive);
 
         int mm = cubeSize;
         for (int x = -mm; x < mm + 1; x++)
-        { // go through each 2d iso view dot that a cube occupies
+        { // loop through each 2d iso view dot that a cube occupies
             for (int y = -mm; y < mm + 1; y++)
             {
-                if (!in_grid(x, y))
+                if (!in_grid(x, y)) // filter only for the dots in hexagon
                     continue;
+
+                // translate cube dots to the cube's position
                 Pair co = get_grid_coords(positions[i]);
                 int xx = co.get(0) + x;
                 int yy = co.get(1) + y;
@@ -86,7 +101,7 @@ void CubePath::add_to_paths()
                 for (Interval add_interval : intervals_to_add)
                 {
                     if (add_interval.contains(0))
-                    { // interval crosses the loop point
+                    { // if interval crosses the loop point
                         if (g->in_grid(xx, yy))
                             g->add_interval(xx, yy, add_interval.set1(1 + eps));
                         if (g->in_grid(xx, yy + scroll_amt))
@@ -104,27 +119,35 @@ void CubePath::add_to_paths()
 }
 
 //--------------------------------------------------------------
+// check whether this cube path clashes with the paths
+// in the parent grid. loop through all the dots of the hexagon
+// made by the cube in isometric projection, translated to each
+// position of the cube during the path, check whether the corresponding
+// time interval clashes with an existing occupation of a background dot
 bool CubePath::does_cubepath_overlap()
 {
     float eps = 1e-6;
     for (int i = 0; i < numMovements + 1; i++)
     {
-        Interval interval0 = get_time_interval(i);
-        Interval interval1 = get_time_interval(i - 1);
+        Interval interval_leave = get_time_interval(i); // time interval for arriving at this position
+        Interval interval_arrive = get_time_interval(i - 1);  // time interval for leaving this position
 
+        // check add_to_paths function above for the comment that goes here
         std::vector<Interval> intervals_to_test;
         if (i < numMovements)
-            intervals_to_test.push_back(interval0);
+            intervals_to_test.push_back(interval_leave);
         if (i > 0)
-            intervals_to_test.push_back(interval1);
+            intervals_to_test.push_back(interval_arrive);
 
         int mm = cubeSize;
         for (int x = -mm; x < mm + 1; x++)
-        { // go through each 2d iso view dot that a cube occupies
+        { // loop through each 2d iso view dot that a cube occupies
             for (int y = -mm; y < mm + 1; y++)
             {
-                if (!in_grid(x, y))
+                if (!in_grid(x, y)) // filter only for the dots in hexagon
                     continue;
+
+                // translate cube dots to the cube's position
                 Pair co = get_grid_coords(positions[i]);
                 int xx = co.get(0) + x;
                 int yy = co.get(1) + y;
@@ -132,7 +155,7 @@ bool CubePath::does_cubepath_overlap()
                 for (Interval test_interval : intervals_to_test)
                 {
                     if (test_interval.contains(0))
-                    { // interval crosses the loop point
+                    { // if interval crosses the loop point
                         if (g->in_grid(xx, yy))
                             if (g->get_occupation(xx, yy).clashes(test_interval.set1(1 + eps)))
                                 return true;
@@ -155,31 +178,34 @@ bool CubePath::does_cubepath_overlap()
 }
 
 //--------------------------------------------------------------
+// decide whether to draw/show the cube path depending on 
+// global time variable t
 void CubePath::show()
 {
     if (interval.contains(g->parent->t))
     {
+        // map the time interval of this path to [0, 1] and show the path
         show(fmod(g->parent->t + 1 - timeOffset, 1) / duration * .999);
     }
 }
 
 //--------------------------------------------------------------
+// show entire path
 void CubePath::show(float q = 0)
 { // q in [0,1]
-
     float Q = q * numMovements;
 
-    int type = get_info(movements[floor(Q)]).get(0);
+    int type = get_mvm_info(movements[floor(Q)]).get(0);
 
-    if (type > 11 && type < 15)
-        show(floor(Q), elastic(fmod(Q, 1)));
-    else if (type > 20 && type < 24)
+    if (type > 11)
         show(floor(Q), elastic(fmod(Q, 1)));
     else
         show(floor(Q), bounce(fmod(Q, 1)));
 }
 
 //--------------------------------------------------------------
+// show a specific movement of the cube path, 
+// given the movement index
 void CubePath::show(int move_idx, float q)
 {
     ofFill();
@@ -198,7 +224,7 @@ void CubePath::show(int move_idx, float q)
     ofSetColor(0);
     for (int i = 0; i < 6; i++)
         for (int j = 0; j < 2; j++)
-            ofDrawTriangle(
+            ofDrawTriangle( // (x1,y1,z1,x2,y2,z2,x3,y3,z3)
                 cube_verts_transformed[cube_faces[i][0 + j]][0],
                 cube_verts_transformed[cube_faces[i][0 + j]][1],
                 cube_verts_transformed[cube_faces[i][0 + j]][2],
@@ -235,12 +261,16 @@ void CubePath::show(int move_idx, float q)
 }
 
 //--------------------------------------------------------------
+// prepare the vertex or point to be shown;
+// tranform according to movement type and translate to
+// path position.
 ofVec3f CubePath::show(ofVec3f v, int move_idx, float q)
 {
-    // prepare the vertex or point to be shown
     v = action(v, move_idx, q);
     v *= cubeSize;
 
+    // translate if the interval crosses the loop point and
+    // that the point has been crossed.
     if (interval.contains(0) && g->parent->t < 0.5)
         v.y += scroll_amt;
 
@@ -254,20 +284,22 @@ ofVec3f CubePath::show(ofVec3f v, int move_idx, float q)
 }
 
 //--------------------------------------------------------------
+// perform the movement e.g. roll 
 ofVec3f CubePath::action(ofVec3f v, int move_idx, float q)
 {
-    Pair info = get_info(movements[move_idx]);
+    Pair info = get_mvm_info(movements[move_idx]);
     int move_type = info.get(0);
-    if (move_type < 12) // rotate
+    if (move_type < 12) // roll
         return roll(v, move_idx, q);
     else
         return squish(v, move_idx, q);
 }
 
 //--------------------------------------------------------------
+// squish/unsquish movement
 ofVec3f CubePath::squish(ofVec3f v, int move_idx, float q)
 {
-    Pair info = get_info(movements[move_idx]);
+    Pair info = get_mvm_info(movements[move_idx]);
     int squish_axis = info.get(0) - 12;
     int squish_amount = info.get(1); // if negative this means squish not stretch
 
@@ -294,16 +326,17 @@ ofVec3f CubePath::squish(ofVec3f v, int move_idx, float q)
 }
 
 //--------------------------------------------------------------
+// roll movement
 ofVec3f CubePath::roll(ofVec3f v, int move_idx, float q)
 {
-    Pair info = get_info(movements[move_idx]);
+    Pair info = get_mvm_info(movements[move_idx]);
     int axis = info.get(0);
     int rotation_amount = info.get(1);
 
     std::array<float, 3> pivot_arr = {cube_verts[pivots[axis]]};
     ofVec3f pivot = ofVec3f(pivot_arr[0], pivot_arr[1], pivot_arr[2]);
-    // v -= pivot;
-    int xyz = axis / 4; // this is floor div
+
+    int xyz = axis / 4; // this is floor division
     if (xyz == 0)
         v.rotateRad(-rotation_amount * HALF_PI * q, pivot, ofVec3f(1, 0, 0));
     else if (xyz == 1)
@@ -311,6 +344,5 @@ ofVec3f CubePath::roll(ofVec3f v, int move_idx, float q)
     else
         v.rotateRad(-rotation_amount * HALF_PI * q, pivot, ofVec3f(0, 1, 0));
 
-    // v -= pivot;
     return v;
 }

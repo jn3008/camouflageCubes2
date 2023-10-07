@@ -1,11 +1,8 @@
 #pragma once
-// #include <cmath>
-// #include <vector>
 #include "Grid.h"
 #include "ofMain.h"
 #include "Occupation.h"
 
-// class Grid;
 class CubePath
 {
     public:

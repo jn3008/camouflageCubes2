@@ -1,10 +1,10 @@
-// #pragma once
-
 #include "Grid.h"
 
 #include "Functions.h"
 #include "ofApp.h"
 
+//--------------------------------------------------------------
+// draw the dots of the background grid
 void Grid::show()
 {
     ofSetColor(255);

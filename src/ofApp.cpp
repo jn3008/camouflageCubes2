@@ -10,27 +10,20 @@ void ofApp::setup()
     ofSetRandomSeed(0);
     
     grid = Grid(this, bg_rad);
-    
-    // CubePath cubePath0 = CubePath(&grid, 2, std::vector<int>{mvm(4, 1), mvm(0, 1), mvm(13, 1)}, ofVec3f(), 0, 0.45);
-    // cubePath0.submit();
-    
-    // CubePath cubePath1 = CubePath(&grid, 2, std::vector<int>{mvm(4, 1), mvm(0, 1), mvm(13, 1)}, ofVec3f(1, 0, 0), 0.1, 0.45);
-    // cubePath1.submit();
 
-    // submit_unsquish_wall(&grid, 0, 13);
-    // submit_unsquish_wall(&grid, 0.5, 12);
-    
-    // sumbit_rolls(&grid, 0.20, 4, 1);
-    // sumbit_rolls(&grid, 0.30, 10, 1);
-    // sumbit_rolls(&grid, 0.70, 0, 1);
-    // sumbit_rolls(&grid, 0.80, 9, -1);  
-    // submit_randoms(&grid);
-    
     submit_unsquish_wall(&grid, 0, 13);
-    submit_unsquish_wall(&grid, 0.25, 12);
-    submit_unsquish_wall(&grid, 0.5, 13);
-    submit_unsquish_wall(&grid, 0.75, 12);
-
+    submit_unsquish_wall(&grid, 0.5, 12);
+    
+    sumbit_rolls(&grid, 0.20, 4, 1);
+    sumbit_rolls(&grid, 0.30, 10, 1);
+    sumbit_rolls(&grid, 0.70, 0, 1);
+    sumbit_rolls(&grid, 0.80, 9, -1);  
+    submit_randoms(&grid);
+    
+    // submit_unsquish_wall(&grid, 0, 13);
+    // submit_unsquish_wall(&grid, 0.25, 12);
+    // submit_unsquish_wall(&grid, 0.5, 13);
+    // submit_unsquish_wall(&grid, 0.75, 12);
 
     std::cout << "end setup" << std::endl;
 }
@@ -50,7 +43,6 @@ void ofApp::update()
 //--------------------------------------------------------------
 void ofApp::draw()
 {
-    // GL_SMOOTH
     ofEnableAntiAliasing(); ofEnableDepthTest();
     ofSetupScreenOrtho(ofGetWidth(), ofGetHeight(), -300, 300);
 
@@ -62,6 +54,7 @@ void ofApp::draw()
 
     grid.show();
 
+    // show each cube path
     for (CubePath *cubePath : grid.cubePaths)
         cubePath->show();
 
